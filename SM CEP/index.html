@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Inventory Management Simulation</title>
+ <style>
+ body {
+ font-family: Arial, sans-serif;
+ margin: 20px;
+ }
+ h1, h2 {
+ color: #333;
+ }
+ table {
+ width: 100%;
+ border-collapse: collapse;
+ margin-bottom: 20px;
+ }
+ table, th, td {
+ border: 1px solid #999;
+ text-align: center;
+ }
+ th, td {
+ padding: 10px;
+ }
+ input {
+ padding: 5px;
+ width: 90%;
+ }
+ .table-container {
+ margin-bottom: 30px;
+ }
+ button {
+ padding: 10px 20px;
+ background-color: #007BFF;
+ color: white;
+ border: none;
+ cursor: pointer;
+ }
+ button:hover {
+ background-color: #0056b3;
+ }
+ </style>
+</head>
+<body>
+ <h1>Inventory Management Simulation</h1>
+ <div class="table-container">
+ <h2>Demand Probabilities and Random Digit Range</h2>
+ <label for="demand-rows">Select number of rows for Demand Table:</label>
+ <input type="number" id="demand-rows" min="1" value="1">
+ <button onclick="generateDemandTable()">Generate Demand Table</button>
+ </div>
+ <div id="demand-table-container"></div>
+ <div class="table-container">
+ <h2>Lead Time Probabilities and Random Digit Range</h2>
+ <label for="leadtime-rows">Select number of rows for Lead Time Table:</label>
+ <input type="number" id="leadtime-rows" min="1" value="1">
+ <button onclick="generateLeadTimeTable()">Generate Lead Time Table</button>
+ </div>
+ <div id="leadtime-table-container"></div>
+ <div class="table-container">
+ <h2>Simulation of 20-Week Period for Desk Calendar Orders</h2>
+ <label for="random-demand">Enter random digits for demand (comma
+separated):</label>
+ <input type="text" id="random-demand" placeholder="e.g., 31, 70, 53">
+ <label for="random-leadtime">Enter random digits for lead time (comma
+separated):</label>
+ <input type="text" id="random-leadtime" placeholder="e.g., 29, 83, 58">
+ <button onclick="generateSimulationTable()">Generate Simulation Table</button>
+ </div>
+ <div id="simulation-table-container"></div>
+ <div id="average-inventory-container"></div>
+ <div id="total-cost-container"></div>
+ <script>
+ let demandTable = [];
+ let leadTimeTable = [];
+ function generateDemandTable() {
+ const rows = document.getElementById('demand-rows').value;
+ demandTable = [];
+ let tableHtml = `<table>
+ <tr>
+ <th>Demand (thousand)</th>
+ <th>Probability</th>
+ <th>Cumulative Probability</th>
+ <th>Random Digit Range</th>
+ </tr>`;
+ for (let i = 0; i < rows; i++) {
+ tableHtml += `<tr>
+ <td><input type="number" id="demand-${i}-value" min="0"
+placeholder="Demand"></td>
+ <td><input type="number" id="demand-${i}-prob" min="0" step="0.01"
+placeholder="Probability"></td>
+ <td id="demand-${i}-cumprob">-</td>
+ <td id="demand-${i}-range">-</td>
+ </tr>`;
+ }
+ tableHtml += `</table><button onclick="calculateDemandTable(${rows})">Calculate
+Demand Table</button>`;
+ document.getElementById('demand-table-container').innerHTML = tableHtml;
+ }
+ function calculateDemandTable(rows) {
+ let cumulativeProbability = 0;
+ let previousRangeEnd = 0;
+ for (let i = 0; i < rows; i++) {
+ const demandValue = parseInt(document.getElementById(`demand-${i}-
+value`).value);
+ const probability = parseFloat(document.getElementById(`demand-${i}-
+prob`).value);
+ if (isNaN(probability)) {
+ alert('Please fill in all probability fields for demand.');
+ return;
+ }
+ cumulativeProbability += probability;
+ document.getElementById(`demand-${i}-cumprob`).innerText =
+cumulativeProbability.toFixed(2);
+ const rangeStart = previousRangeEnd + 1;
+ const rangeEnd = Math.round(cumulativeProbability * 100);
+ document.getElementById(`demand-${i}-range`).innerText = `${rangeStart}-
+${rangeEnd}`;
+ demandTable.push({ demand: demandValue, rangeStart, rangeEnd });
+ previousRangeEnd = rangeEnd;
+ }
+ }
+ function generateLeadTimeTable() {
+ const rows = document.getElementById('leadtime-rows').value;
+ leadTimeTable = [];
+ let tableHtml = `<table>
+ <tr>
+ <th>Lead Time (weeks)</th>
+ <th>Probability</th>
+ <th>Cumulative Probability</th>
+ <th>Random Digit Range</th>
+ </tr>`;
+ for (let i = 0; i < rows; i++) {
+ tableHtml += `<tr>
+ <td><input type="number" id="leadtime-${i}-value" min="0"
+placeholder="Lead Time"></td>
+ <td><input type="number" id="leadtime-${i}-prob" min="0" step="0.01"
+placeholder="Probability"></td>
+ <td id="leadtime-${i}-cumprob">-</td>
+ <td id="leadtime-${i}-range">-</td>
+ </tr>`;
+ }
+ tableHtml += `</table><button
+onclick="calculateLeadTimeTable(${rows})">Calculate Lead Time Table</button>`;
+ document.getElementById('leadtime-table-container').innerHTML = tableHtml;
+ }
+ function calculateLeadTimeTable(rows) {
+ let cumulativeProbability = 0;
+ let previousRangeEnd = 0;
+ for (let i = 0; i < rows; i++) {
+ const leadTimeValue = parseInt(document.getElementById(`leadtime-${i}-
+value`).value);
+ const probability = parseFloat(document.getElementById(`leadtime-${i}-
+prob`).value);
+ if (isNaN(probability)) {
+ alert('Please fill in all probability fields for lead time.');
+ return;
+ }
+ cumulativeProbability += probability;
+ document.getElementById(`leadtime-${i}-cumprob`).innerText =
+cumulativeProbability.toFixed(2);
+ const rangeStart = previousRangeEnd + 1;
+ const rangeEnd = Math.round(cumulativeProbability * 100);
+ document.getElementById(`leadtime-${i}-range`).innerText = `${rangeStart}-
+${rangeEnd}`;
+ leadTimeTable.push({ leadTime: leadTimeValue, rangeStart, rangeEnd });
+ previousRangeEnd = rangeEnd;
+ }
+ }
+ function generateSimulationTable() {
+ const randomDemand = document.getElementById('randomdemand').value.split(',').map(Number);
+ const randomLeadTime = document.getElementById('randomleadtime').value.split(',').map(Number);
+ if (randomDemand.length !== 20 || randomLeadTime.length < 5) {
+ alert('Please enter exactly 20 random digits for demand and at least 5 for lead time.');
+ return;
+ }
+ let tableHtml = `<table>
+ <tr>
+ <th>Week</th>
+ <th>Beginning Inventory</th>
+ <th>Random Digits for Demand</th>
+ <th>Demand (thousand)</th>
+ <th>Ending Inventory</th>
+ <th>Shortage Quantity</th>
+ <th>Order Quantity</th>
+ <th>Random Digits for Lead Time</th>
+ <th>Days until Order Arrives</th>
+ </tr>`;
+ let beginningInventory = 3000;
+ let orderInProgress = false;
+ let daysUntilOrderArrives = 0;
+ let totalEndingInventory = 0;
+ let orderingCost = 0;
+ let totalShortage = 0;
+ for (let i = 0; i < 20; i++) {
+ const week = i + 1;
+ const demand = getDemandFromRandomDigit(randomDemand[i]);
+ let endingInventory = beginningInventory - demand;
+ let shortage = 0;
+ if (endingInventory < 0) {
+ shortage = Math.abs(endingInventory);
+ endingInventory = 0;
+ }
+ let orderQty = 0;
+ if (endingInventory <= 2000 && !orderInProgress) {
+ orderQty = 4000 - endingInventory;
+ orderInProgress = true;
+ orderingCost += 50; // Increment ordering cost by 50 for each order placed
+ daysUntilOrderArrives = getLeadTimeFromRandomDigit(randomLeadTime[i %
+randomLeadTime.length]);
+ } else if (orderInProgress) {
+ if (daysUntilOrderArrives > 0) {
+ daysUntilOrderArrives--;
+ }
+ if (daysUntilOrderArrives === 0) {
+ beginningInventory += orderQty;
+ orderInProgress = false;
+ }
+ }
+ tableHtml += `<tr>
+ <td>${week}</td>
+ <td>${beginningInventory}</td>
+ <td>${randomDemand[i]}</td>
+ <td>${demand}</td>
+ <td>${endingInventory}</td>
+ <td>${shortage}</td>
+ <td>${orderQty}</td>
+ <td>${randomLeadTime[i % randomLeadTime.length]}</td>
+ <td>${daysUntilOrderArrives}</td>
+ </tr>`;
+ totalEndingInventory += endingInventory;
+ totalShortage += shortage;
+ beginningInventory = endingInventory;
+ }
+ const averageEndingInventory = (totalEndingInventory / 20).toFixed(2);
+ // Calculate shortage cost by converting to thousands and multiplying by 10
+ const shortageCost = Math.floor(totalShortage / 1000) * 10;
+ // Total weekly cost calculation
+ const totalWeeklyCost = orderingCost + shortageCost;
+ tableHtml += `</table>
+ <p><strong>Average Ending Inventory:</strong>
+${averageEndingInventory}</p>
+ <p><strong>Ordering Cost:</strong> $${orderingCost}</p>
+ <p><strong>Shortage Cost:</strong> $${shortageCost}</p>
+ <p><strong>Total Weekly Cost:</strong> $${totalWeeklyCost}</p>`;
+ document.getElementById('simulation-table-container').innerHTML = tableHtml;
+ }
+ function getDemandFromRandomDigit(randomDigit) {
+ for (let i = 0; i < demandTable.length; i++) {
+ const { demand, rangeStart, rangeEnd } = demandTable[i];
+ if (randomDigit >= rangeStart && randomDigit <= rangeEnd) {
+ return demand;
+ }
+ }
+ return 0;
+ }
+ function getLeadTimeFromRandomDigit(randomDigit) {
+ for (let i = 0; i < leadTimeTable.length; i++) {
+ const { leadTime, rangeStart, rangeEnd } = leadTimeTable[i];
+ if (randomDigit >= rangeStart && randomDigit <= rangeEnd) {
+ return leadTime;
+ }
+ }
+ return 1;
+ }
+ </script>
+</body>
+</html>
